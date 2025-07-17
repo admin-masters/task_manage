@@ -162,9 +162,14 @@
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" name="password" id="password" required>
-            </div>
+    <label for="password">Password</label>
+    <div class="password-input-container">
+        <input type="password" name="password" id="password" required>
+        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+            <i class="fas fa-eye" id="password-icon"></i>
+        </button>
+    </div>
+</div>
             
             <div class="form-buttons">
                 <button type="submit" class="submit-btn">Add User</button>
@@ -546,7 +551,31 @@
         border-collapse: separate;
         border-spacing: 0;
     }
+    .password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
 
+.password-input-container input {
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 16px;
+    padding: 5px;
+    transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+    color: #333;
+}
     #userTable th, #userTable td {
         padding: 12px 15px;
         text-align: left;
@@ -848,6 +877,22 @@
         const sidebar = document.getElementById('mainSidebar');
         sidebar.classList.toggle('expanded');
     }
+    // Toggle password visibility
+// Toggle password visibility
+function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const passwordIcon = document.getElementById(inputId + '-icon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.classList.remove('fa-eye');
+        passwordIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        passwordIcon.classList.remove('fa-eye-slash');
+        passwordIcon.classList.add('fa-eye');
+    }
+}
 
     // Show add user form
     function showAddUserForm() {

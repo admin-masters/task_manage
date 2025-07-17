@@ -1085,3 +1085,128 @@ def manage_users(request):
                 messages.error(request, "You can only edit users from your department.")
     
     return render(request, 'tasks/manage_users.html', {'users': users})
+def general_manage_users(request):
+    """
+    General user management page without authentication
+    Allows adding, editing, and deleting users with category selection
+    """
+    
+    # Get all users and departments for the page
+    users = User.objects.all().select_related('userprofile')
+    departments = Department.objects.all()
+    
+    # Category choices for UserProfile
+    CATEGORY_CHOICES = [
+        ('Task Management System Manager', 'Task Management System Manager'),
+        ('Non-Management', 'Non-Management'),
+        ('Executive Management', 'Executive Management'),
+        ('Departmental Manager', 'Departmental Manager'),
+    ]
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        
+        if action == "add":
+            username = request.POST.get("username")
+            first_name = request.POST.get("first_name")
+            last_name = request.POST.get("last_name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+            category = request.POST.get("category")
+            department_id = request.POST.get("department")
+            
+            try:
+                # Check if username already exists
+                if User.objects.filter(username=username).exists():
+                    messages.error(request, f"Username '{username}' already exists!")
+                    return redirect('general_manage_users')
+                
+                # Check if email already exists
+                if User.objects.filter(email=email).exists():
+                    messages.error(request, f"Email '{email}' already exists!")
+                    return redirect('general_manage_users')
+                
+                # Get department object
+                department = get_object_or_404(Department, id=department_id) if department_id else None
+                
+                # Create user
+                user = User.objects.create_user(
+                    username=username, 
+                    email=email, 
+                    password=password,
+                    first_name=first_name, 
+                    last_name=last_name
+                )
+                
+                # Create or update user profile
+                UserProfile.objects.create(
+                    user=user, 
+                    category=category, 
+                    department=department
+                )
+                
+                messages.success(request, f"User '{username}' added successfully!")
+                
+            except Exception as e:
+                messages.error(request, f"Error adding user: {str(e)}")
+                
+        elif action == "edit":
+            user_id = request.POST.get("user_id")
+            new_username = request.POST.get("username")
+            new_email = request.POST.get("email")
+            first_name = request.POST.get("first_name")
+            last_name = request.POST.get("last_name")
+            category = request.POST.get("category")
+            department_id = request.POST.get("department")
+            
+            try:
+                user = get_object_or_404(User, id=user_id)
+                
+                # Check if username already exists for other users
+                if User.objects.filter(username=new_username).exclude(id=user_id).exists():
+                    messages.error(request, f"Username '{new_username}' already exists!")
+                    return redirect('general_manage_users')
+                
+                # Check if email already exists for other users
+                if User.objects.filter(email=new_email).exclude(id=user_id).exists():
+                    messages.error(request, f"Email '{new_email}' already exists!")
+                    return redirect('general_manage_users')
+                
+                # Get department object
+                department = get_object_or_404(Department, id=department_id) if department_id else None
+                
+                # Update user
+                user.username = new_username
+                user.email = new_email
+                user.first_name = first_name
+                user.last_name = last_name
+                user.save()
+                
+                # Update user profile
+                user_profile, created = UserProfile.objects.get_or_create(user=user)
+                user_profile.category = category
+                user_profile.department = department
+                user_profile.save()
+                
+                messages.success(request, f"User '{new_username}' updated successfully!")
+                
+            except Exception as e:
+                messages.error(request, f"Error updating user: {str(e)}")
+                
+        elif action == "delete":
+            user_id = request.POST.get("user_id")
+            try:
+                user = get_object_or_404(User, id=user_id)
+                username = user.username
+                user.delete()
+                messages.success(request, f"User '{username}' deleted successfully!")
+            except Exception as e:
+                messages.error(request, f"Error deleting user: {str(e)}")
+    
+    context = {
+        'users': users,
+        'departments': departments,
+        'categories': CATEGORY_CHOICES,
+    }
+    
+    return render(request, 'tasks/general_manage_users.html', context)
